@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BV360 — Event Management</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;background:#f0f2f5;color:#1a1a2e;height:100vh;overflow:hidden}
+.layout{display:flex;height:100vh}
+
+/* NAV */
+.nav{width:50%;background:#1e2a3b;color:#a0aec0;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid #0f1923}
+.nav-logo{padding:13px 16px;color:white;font-weight:700;font-size:15px;border-bottom:1px solid #2d3f57;display:flex;align-items:center;justify-content:space-between}
+.nav-logo-right{display:flex;align-items:center;gap:8px}
+.nav-toolbar{padding:10px 14px;border-bottom:1px solid #2d3f57;display:flex;gap:8px;align-items:center}
+.nav-search{flex:1;padding:5px 10px;border-radius:5px;border:1px solid #2d3f57;background:#162132;color:#e2e8f0;font-size:12px;outline:none}
+.nav-search::placeholder{color:#4a6082}
+.nav-search:focus{border-color:#4a7abf}
+.nav-scroll{flex:1;overflow-y:auto}
+.nav-section-label{padding:10px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#4a6082}
+.nav-item{padding:7px 14px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px;transition:background .15s;color:#a0aec0;user-select:none}
+.nav-item:hover{background:#253548;color:#e2e8f0}
+.nav-item.selected{background:#1d3a5f;color:white;border-left:2px solid #2563eb}
+.nav-l1{font-size:12px;font-weight:500}
+.nav-l2{padding-left:14px;font-size:12px}
+.nav-arrow{font-size:10px;transition:transform .15s;margin-left:auto;color:#4a6082;flex-shrink:0}
+.nav-arrow.open{transform:rotate(90deg)}
+.nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.nd-open{background:#10b981}
+.nd-susp{background:#f59e0b}
+.nd-settled{background:#4a6082}
+.nd-draft{background:#6366f1}
+.nav-s{margin-left:auto;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0}
+.ns-open{background:#065f46;color:#6ee7b7}
+.ns-susp{background:#7c2d12;color:#fca5a5}
+.ns-settled{background:#2d3f57;color:#718096}
+.ns-draft{background:#312e81;color:#a5b4fc}
+
+/* WORK */
+.work{width:50%;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.view{display:none;flex-direction:column;height:100%;overflow:hidden}
+.view.active{display:flex}
+
+/* HEADER */
+.ev-header{background:white;border-bottom:1px solid #e2e8f0;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ev-title{font-size:15px;font-weight:600;color:#1a202c}
+.ev-meta{font-size:12px;color:#718096;display:flex;align-items:center;gap:8px;margin-top:2px}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-open{background:#d1fae5;color:#065f46}
+.badge-susp{background:#fee2e2;color:#991b1b}
+.badge-settled{background:#e2e8f0;color:#4a5568}
+.badge-draft{background:#ede9fe;color:#5b21b6}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:#2563eb;color:white}
+.btn-primary:hover{background:#1d4ed8}
+.btn-secondary{background:white;color:#374151;border:1px solid #d1d5db}
+.btn-secondary:hover{background:#f9fafb}
+.btn-ghost{background:transparent;color:#2563eb;border:none}
+.btn-ghost:hover{background:#eff6ff}
+.btn-danger{background:white;color:#dc2626;border:1px solid #fca5a5}
+.btn-danger:hover{background:#fef2f2}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+/* AREA */
+.area{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:14px 20px;gap:12px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.toolbar-left{display:flex;align-items:center;gap:8px}
+.area-title{font-size:13px;font-weight:600;color:#374151}
+.cnt{background:#e5e7eb;color:#6b7280;padding:1px 7px;border-radius:10px;font-size:11px}
+.search-wrap{position:relative}
+.search-wrap::before{content:'⌕';position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px;pointer-events:none}
+.search{padding:5px 8px 5px 28px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;outline:none;width:190px}
+.search:focus{border-color:#2563eb;box-shadow:0 0 0 2px #dbeafe}
+
+/* TABLE */
+.tbl-wrap{flex:1;overflow-y:auto;background:white;border:1px solid #e2e8f0;border-radius:8px}
+.tbl-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;color:#9ca3af;text-align:center;gap:8px}
+.tbl-empty-icon{font-size:28px}
+.tbl-empty-title{font-size:13px;font-weight:600;color:#6b7280}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;background:#f8fafc;z-index:1}
+th{padding:8px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0}
+td{padding:9px 14px;border-bottom:1px solid #f1f5f9;color:#374151;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr.row:hover td{background:#f8fafc;cursor:pointer}
+.dot{display:inline-flex;align-items:center;gap:5px}
+.dot::before{content:'';width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot-open::before{background:#10b981}
+.dot-susp::before{background:#f59e0b}
+.dot-settled::before{background:#9ca3af}
+
+/* BREADCRUMB */
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;padding:10px 20px;background:white;border-bottom:1px solid #e2e8f0;flex-shrink:0}
+.bc-link{color:#2563eb;cursor:pointer}
+.bc-link:hover{text-decoration:underline}
+.bc-sep{color:#d1d5db}
+.bc-cur{color:#374151;font-weight:500}
+
+/* MARKET DETAIL */
+.mkt-area{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.card{background:white;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.card-header{padding:11px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12px;font-weight:600;color:#374151}
+.form-grid{display:grid;grid-template-columns:1fr 1fr}
+.ff{padding:9px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
+.ff:nth-child(odd){border-right:1px solid #f1f5f9}
+.ff-full{grid-column:span 2;border-right:none!important}
+.fl{font-size:11px;color:#9ca3af;min-width:110px;flex-shrink:0}
+.fi{flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;outline:none}
+.fi:focus{border-color:#2563eb}
+.fs{flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;background:white;outline:none}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid #e2e8f0;padding:0 14px;background:white}
+.tab{padding:9px 14px;font-size:12px;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab:hover{color:#374151}
+.tab.active{color:#2563eb;border-bottom-color:#2563eb}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* INLINE */
+.ii{width:100%;padding:3px 5px;border:1px solid transparent;border-radius:3px;font-size:12px;background:transparent;outline:none}
+.ii:hover{border-color:#d1d5db;background:white}
+.ii:focus{border-color:#2563eb;background:white}
+
+/* OVERLAY + DRAWER */
+.overlay{display:none;position:fixed;top:0;right:0;width:50%;height:100vh;background:rgba(0,0,0,.3);z-index:100}
+.overlay.on{display:block}
+.drawer{position:fixed;top:0;right:0;width:46%;height:100vh;background:white;z-index:200;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;box-shadow:-4px 0 24px rgba(0,0,0,.15)}
+.drawer.open{transform:translateX(0)}
+.drawer-wide{width:48%}
+.dh{padding:15px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dt{font-size:14px;font-weight:600;color:#1a202c}
+.dc{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;color:#9ca3af;font-size:16px;border:none;background:transparent}
+.dc:hover{background:#f3f4f6;color:#374151}
+.db{flex:1;overflow-y:auto;padding:18px}
+.df{margin-bottom:13px}
+.dl{display:block;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.dl .req{color:#ef4444}
+.di{width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;color:#374151;outline:none}
+.di:focus{border-color:#2563eb;box-shadow:0 0 0 2px #dbeafe}
+.di[readonly]{background:#f9fafb;color:#9ca3af}
+.ds{width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;background:white;outline:none}
+.dr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dsec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin:18px 0 10px;padding-bottom:5px;border-bottom:1px solid #f1f5f9}
+.dfooter{padding:11px 20px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cbrow{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12px;color:#374151}
+.cbgrid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:white;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:560px;max-height:82vh;display:flex;flex-direction:column;z-index:301}
+.mh{padding:14px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mt{font-size:14px;font-weight:600}
+.mb{flex:1;overflow-y:auto;padding:18px}
+.mf{padding:11px 20px;border-top:1px solid #e2e8f0;display:flex;gap:8px;flex-shrink:0}
+
+/* LOCKED */
+.locked{background:#f8fafc;border:1px dashed #cbd5e0;border-radius:8px;padding:24px;text-align:center;color:#9ca3af}
+.locked-icon{font-size:22px;margin-bottom:6px}
+.locked-title{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:3px}
+
+/* BATCH */
+.bgrid{border:1px solid #e2e8f0;border-radius:6px;overflow:hidden}
+.bgrid-head{padding:7px 10px 7px 42px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:600;color:#6b7280}
+.brow{display:flex;align-items:center;border-bottom:1px solid #f1f5f9}
+.brow:last-child{border-bottom:none}
+.bnum{width:36px;text-align:center;font-size:11px;color:#9ca3af;flex-shrink:0;border-right:1px solid #f1f5f9;padding:8px 0;background:#f8fafc}
+.brow input{flex:1;padding:7px 10px;border:none;outline:none;font-size:12px}
+.brow input:focus{background:#eff6ff}
+
+/* PRICE TABLE */
+.ptbl{width:100%;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;font-size:12px;margin-bottom:8px}
+.ptbl th{background:#f8fafc;font-size:11px;padding:6px 10px;text-transform:none;letter-spacing:0;color:#6b7280;font-weight:600;border-bottom:1px solid #e2e8f0}
+.ptbl td{padding:5px 10px}
+
+/* AUDIT */
+.alog{padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:12px}
+.alog:last-child{border-bottom:none}
+.atime{color:#9ca3af;font-size:11px}
+.auser{font-weight:600;color:#374151}
+.achange{color:#6b7280;margin-top:1px}
+.afield{color:#374151;font-weight:500}
+
+/* CREATE */
+.create-header{background:white;border-bottom:1px solid #e2e8f0;padding:13px 20px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.create-title{font-size:15px;font-weight:600}
+.create-area{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:calc(50% + 10px);transform:translateX(-50%) translateY(10px);background:#1a202c;color:white;padding:9px 15px;border-radius:8px;font-size:12px;z-index:500;opacity:0;transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.muted{color:#9ca3af}
+.sm{font-size:11px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ═══ NAV ═══ -->
+<aside class="nav">
+  <div class="nav-logo">
+    BV360 Admin
+    <div class="nav-logo-right">
+      <button class="btn btn-sm" style="background:#7c2d12;color:#fca5a5;border:none;font-size:10px" onclick="resetDemo()">Reset demo</button>
+    </div>
+  </div>
+  <div class="nav-toolbar">
+    <input class="nav-search" placeholder="Search events..." oninput="navSearch(this.value)">
+    <button class="btn btn-primary btn-sm" onclick="showView('create')">+ New</button>
+  </div>
+  <div class="nav-scroll" id="nav-tree"></div>
+</aside>
+
+<!-- ═══ WORK AREA ═══ -->
+<main class="work">
+
+  <!-- VIEW: EDIT EVENT -->
+  <div class="view active" id="view-edit">
+    <div class="ev-header">
+      <div>
+        <div class="ev-title" id="hdr-title">—</div>
+        <div class="ev-meta" id="hdr-meta"></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openDrawer('ev-details')">Edit Details</button>
+    </div>
+    <div class="area">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <span class="area-title">Markets</span>
+          <span class="cnt" id="mkt-cnt">0</span>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('batch-mkt')">☰ Batch Market Creation</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="search-wrap">
+            <input class="search" placeholder="Search markets..." oninput="filterMkts(this.value)">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openDrawer('add-mkt')">+ Add Market</button>
+        </div>
+      </div>
+      <div class="tbl-wrap" id="mkts-wrap">
+        <div class="tbl-empty">
+          <div class="tbl-empty-icon">📋</div>
+          <div class="tbl-empty-title">No markets yet</div>
+          <div class="sm muted">Add the first market to get started</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: CREATE EVENT -->
+  <div class="view" id="view-create">
+    <div class="create-header">
+      <div class="create-title">New Event</div>
+      <button class="btn btn-secondary btn-sm" onclick="showView('edit')">Cancel</button>
+    </div>
+    <div class="create-area">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Event Details</span>
+          <span class="muted sm">Fill required fields to unlock Markets</span>
+        </div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+          <div class="dr">
+            <div class="df">
+              <label class="dl">Event Path ID <span class="req">*</span></label>
+              <input class="di" id="new-path" placeholder="e.g. football.premier_league">
+            </div>
+            <div class="df">
+              <label class="dl">Type <span class="req">*</span></label>
+              <select class="ds" id="new-type"><option value="">Select type...</option><option>Match</option><option>Outright</option></select>
+            </div>
+          </div>
+          <div class="df">
+            <label class="dl">Description <span class="req">*</span></label>
+            <input class="di" id="new-desc" placeholder="e.g. Arsenal vs Chelsea">
+          </div>
+          <div class="dr">
+            <div class="df">
+              <label class="dl">Start Date <span class="req">*</span></label>
+              <input class="di" type="date" id="new-date">
+            </div>
+            <div class="df">
+              <label class="dl">Start Time <span class="req">*</span></label>
+              <input class="di" type="time" id="new-time">
+            </div>
+          </div>
+          <div class="dr">
+            <div class="df">
+              <label class="dl">Opponent A</label>
+              <input class="di" id="new-oppa" placeholder="Search...">
+            </div>
+            <div class="df">
+              <label class="dl">Opponent B</label>
+              <input class="di" id="new-oppb" placeholder="Search...">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px">
+            <button class="btn btn-primary" onclick="saveNewEvent()">Save Event Details</button>
+          </div>
+        </div>
+      </div>
+      <div class="locked">
+        <div class="locked-icon">🔒</div>
+        <div class="locked-title">Markets unavailable</div>
+        <div class="sm">Save Event Details first to add Markets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: MARKET DETAIL -->
+  <div class="view" id="view-mkt">
+    <div class="breadcrumb">
+      <span class="bc-link" onclick="showView('edit')">← Markets</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-cur" id="mkt-bc-name">—</span>
+    </div>
+    <div class="mkt-area">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Market Details</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge" id="mkt-badge">OPEN</span>
+            <button class="btn btn-secondary btn-sm" id="mkt-susp-btn" onclick="toggleMktStatus()">Suspend</button>
+            <button class="btn btn-primary btn-sm" onclick="saveMktEdits()">Save</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="ff"><span class="fl">ID</span><span class="muted" id="mf-id">—</span></div>
+          <div class="ff"><span class="fl">FeedCode</span><span class="muted" id="mf-feed">—</span></div>
+          <div class="ff ff-full"><span class="fl">Description <span style="color:#ef4444">*</span></span><input class="fi" id="mf-desc"></div>
+          <div class="ff">
+            <span class="fl">Period <span style="color:#ef4444">*</span></span>
+            <select class="fs" id="mf-period"><option>90 Mins</option><option>First Half</option><option>Second Half</option></select>
+          </div>
+          <div class="ff">
+            <span class="fl">Market Type <span style="color:#ef4444">*</span></span>
+            <select class="fs" id="mf-type"><option>Match Betting</option><option>Asian Handicap</option><option>Both Teams to Score</option><option>Correct Score</option><option>Total Goals</option></select>
+          </div>
+          <div class="ff">
+            <span class="fl">Status <span style="color:#ef4444">*</span></span>
+            <select class="fs" id="mf-status" onchange="syncMktStatus()"><option>OPEN</option><option>SUSPENDED</option><option>RESULTED</option><option>SETTLED</option></select>
+          </div>
+          <div class="ff"><span class="fl">Cashoutable</span><input type="checkbox" id="mf-cash" checked></div>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:visible">
+        <div class="tabs">
+          <div class="tab active" id="tab-out-btn" onclick="switchTab('out',this)">Outcomes <span class="cnt" id="out-cnt" style="margin-left:4px">0</span></div>
+          <div class="tab" id="tab-book-btn" onclick="switchTab('book',this)">Book Details <span class="cnt" style="margin-left:4px">0</span></div>
+        </div>
+
+        <!-- Outcomes -->
+        <div class="tab-pane active" id="pane-out">
+          <div style="padding:9px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9">
+            <button class="btn btn-secondary btn-sm" onclick="openModal('batch-out')">Batch Add</button>
+            <button class="btn btn-primary btn-sm" onclick="openDrawer('add-out')">+ Add Outcome</button>
+          </div>
+          <div id="outcomes-wrap">
+            <div class="tbl-empty">
+              <div class="tbl-empty-icon">📊</div>
+              <div class="tbl-empty-title">No outcomes yet</div>
+              <div class="sm muted">Add the first outcome for this market</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book Details -->
+        <div class="tab-pane" id="pane-book">
+          <div style="padding:9px 12px;display:flex;justify-content:flex-end;border-bottom:1px solid #f1f5f9">
+            <button class="btn btn-primary btn-sm" onclick="addBookRow()">+ Add</button>
+          </div>
+          <table><thead><tr><th style="width:60px">Current</th><th>Book</th><th style="width:70px">Version</th><th>Default Place Terms</th><th>Applied Place Terms</th><th style="width:50px">Fixed</th></tr></thead>
+          <tbody id="book-body">
+            <tr><td><input type="checkbox" checked></td><td><input class="ii" value="EP"></td><td><input class="ii" value="1" style="width:50px"></td><td class="muted">Win Only</td><td><select class="fs" style="font-size:11px;padding:3px 6px"><option>EW 1/3 1,2,3,4</option><option>Win Only</option></select></td><td><input type="checkbox"></td></tr>
+            <tr><td><input type="checkbox"></td><td><input class="ii" value="SP"></td><td><input class="ii" value="1" style="width:50px"></td><td class="muted">Win Only</td><td><select class="fs" style="font-size:11px;padding:3px 6px"><option>Win Only</option><option>EW 1/3 1,2,3,4</option></select></td><td><input type="checkbox"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<!-- DRAWER: Event Details -->
+<div class="drawer" id="d-ev-details">
+  <div class="dh"><span class="dt">Event Details</span><button class="dc" onclick="closeDrawer()">✕</button></div>
+  <div class="db" id="ev-details-body"></div>
+  <div class="dfooter">
+    <button class="btn btn-primary" onclick="saveEvDetails()">Save</button>
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+  </div>
+</div>
+
+<!-- DRAWER: Add Market -->
+<div class="drawer" id="d-add-mkt">
+  <div class="dh"><span class="dt">Add Market</span><button class="dc" onclick="closeDrawer()">✕</button></div>
+  <div class="db">
+    <div class="df"><label class="dl">Description <span class="req">*</span></label><input class="di" id="nm-desc" placeholder="e.g. Both Teams to Score"></div>
+    <div class="df"><label class="dl">Description Template</label><input class="di" id="nm-tmpl"></div>
+    <div class="dr">
+      <div class="df"><label class="dl">Period <span class="req">*</span></label>
+        <select class="ds" id="nm-period"><option value="">Select...</option><option>90 Mins</option><option>First Half</option><option>Second Half</option><option>Extra Time</option></select></div>
+      <div class="df"><label class="dl">Market Type <span class="req">*</span></label>
+        <select class="ds" id="nm-type"><option value="">Select...</option><option>Match Betting</option><option>Asian Handicap</option><option>Both Teams to Score</option><option>Correct Score</option><option>Total Goals</option></select></div>
+    </div>
+    <div class="df"><label class="dl">Status <span class="req">*</span></label>
+      <select class="ds" id="nm-status"><option>OPEN</option><option>SUSPENDED</option></select></div>
+    <div class="df"><label class="dl">Opponent</label><input class="di" id="nm-opp" placeholder="Search opponent..."></div>
+    <label class="cbrow" style="margin-top:8px"><input type="checkbox" id="nm-cash" checked> Cashoutable</label>
+  </div>
+  <div class="dfooter">
+    <button class="btn btn-primary" onclick="saveNewMarket()">Save Market</button>
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+  </div>
+</div>
+
+<!-- DRAWER: Outcome -->
+<div class="drawer drawer-wide" id="d-outcome">
+  <div class="dh"><span class="dt" id="out-title">Outcome</span><button class="dc" onclick="closeDrawer()">✕</button></div>
+  <div class="db" id="out-body"></div>
+  <div class="dfooter">
+    <button class="btn btn-primary" onclick="saveOutcome()">Save</button>
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost btn-sm" id="audit-btn" style="display:none" onclick="showAudit()">⟳ Audit Logs</button>
+  </div>
+</div>
+
+<!-- MODAL: Batch Market -->
+<div class="modal-bg" id="m-batch-mkt">
+  <div style="position:fixed;inset:0" onclick="closeModal('batch-mkt')"></div>
+  <div class="modal">
+    <div class="mh"><span class="mt">Batch Market Creation</span><button class="dc" onclick="closeModal('batch-mkt')">✕</button></div>
+    <div class="mb">
+      <div class="df"><label class="dl">Period</label>
+        <select class="ds"><option>90 Mins</option><option>First Half</option><option>Second Half</option></select></div>
+      <div class="df"><label class="dl">Filter Market Types</label>
+        <input class="di" placeholder="Filter..." oninput="filterTypes(this.value)"></div>
+      <div style="border:1px solid #e2e8f0;border-radius:6px;max-height:260px;overflow-y:auto" id="types-list"></div>
+      <div style="margin-top:8px;font-size:11px;color:#9ca3af" id="types-cnt">0 types selected</div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-primary" onclick="saveBatchMarkets()">Generate and save</button>
+      <button class="btn btn-secondary" onclick="closeModal('batch-mkt')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Batch Outcomes -->
+<div class="modal-bg" id="m-batch-out">
+  <div style="position:fixed;inset:0" onclick="closeModal('batch-out')"></div>
+  <div class="modal">
+    <div class="mh"><span class="mt">Batch Outcome Creation</span><button class="dc" onclick="closeModal('batch-out')">✕</button></div>
+    <div class="mb">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm">Import from clipboard</button>
+        <button class="btn btn-secondary btn-sm">Import from main market</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input class="di" placeholder="Import Opponents from URL..." style="flex:1">
+        <button class="btn btn-secondary btn-sm">Import from URL</button>
+      </div>
+      <div class="bgrid">
+        <div class="bgrid-head">Description</div>
+        <div id="batch-out-rows"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-primary" onclick="saveBatchOutcomes()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('batch-out')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DEMO DATA ────────────────────────────────────────────────────────
+const DEMO = {
+  nextId: 100,
+  currentEventId: 1,
+  currentMarketId: null,
+  events: [
+    {
+      id: 1, path: 'football.epl.2026', desc: 'Arsenal vs Chelsea',
+      date: '2026-06-21', time: '18:00', type: 'Match',
+      oppA: 'Arsenal', oppB: 'Chelsea', status: 'OPEN',
+      sport: 'Football', league: 'Premier League',
+      markets: [
+        {
+          id: 10, desc: '1X2 Full Time', period: '90 Mins', type: 'Match Betting',
+          status: 'OPEN', cash: true,
+          outcomes: [
+            {id:101,desc:'Home Win',price:'2.10',status:'OPEN',singles:false,keywords:'HOMEWIN',maxStake:''},
+            {id:102,desc:'Draw',price:'3.40',status:'OPEN',singles:false,keywords:'DRAW',maxStake:''},
+            {id:103,desc:'Away Win',price:'3.80',status:'SUSPENDED',singles:false,keywords:'AWAYWIN',maxStake:''},
+          ]
+        },
+        {id:11,desc:'Both Teams to Score',period:'90 Mins',type:'Both Teams to Score',status:'OPEN',cash:true,outcomes:[
+          {id:111,desc:'Yes',price:'1.80',status:'OPEN',singles:false,keywords:'BTTS_YES',maxStake:''},
+          {id:112,desc:'No',price:'2.00',status:'OPEN',singles:false,keywords:'BTTS_NO',maxStake:''},
+        ]},
+        {id:12,desc:'Asian Handicap -0.5',period:'90 Mins',type:'Asian Handicap',status:'OPEN',cash:true,outcomes:[]},
+        {id:13,desc:'Correct Score',period:'90 Mins',type:'Correct Score',status:'SUSPENDED',cash:false,outcomes:[]},
+        {id:14,desc:'Total Goals O/U 2.5',period:'90 Mins',type:'Total Goals',status:'OPEN',cash:true,outcomes:[]},
+      ]
+    },
+    {id:2,path:'football.epl.2026',desc:'Man City vs Liverpool',date:'2026-06-22',time:'15:00',type:'Match',oppA:'Man City',oppB:'Liverpool',status:'OPEN',sport:'Football',league:'Premier League',markets:[]},
+    {id:3,path:'football.epl.2026',desc:'Tottenham vs Man Utd',date:'2026-06-21',time:'20:00',type:'Match',oppA:'Tottenham',oppB:'Man Utd',status:'SUSPENDED',sport:'Football',league:'Premier League',markets:[]},
+  ]
+};
+
+const MARKET_TYPES=['#PriceItUp','1st Carded Team','1st Goal Scorer Plus','3-Way Handicap','Anytime Booking','Anytime Correct Score','Anytime Goal Scorer','Asian Goal Line','Asian Handicap','Asian Handicap (Asia)','Both Teams to Score','Correct Score','Double Chance','Draw No Bet','Match Betting','Total Goals','Winning Margin'];
+
+// ─── STATE ────────────────────────────────────────────────────────────
+let S = loadState();
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('bv360_proto');
+    return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEMO));
+  } catch(e){ return JSON.parse(JSON.stringify(DEMO)); }
+}
+
+function saveState(){
+  localStorage.setItem('bv360_proto', JSON.stringify(S));
+}
+
+function resetDemo(){
+  if(!confirm('Reset all demo data?')) return;
+  localStorage.removeItem('bv360_proto');
+  S = JSON.parse(JSON.stringify(DEMO));
+  S.currentEventId = S.events[0].id;
+  S.currentMarketId = null;
+  saveState();
+  renderNav();
+  openEvent(S.events[0]);
+  showToast('Demo reset');
+}
+
+function nextId(){ return ++S.nextId; }
+
+// ─── GETTERS ──────────────────────────────────────────────────────────
+function currentEvent(){ return S.events.find(e=>e.id===S.currentEventId)||null; }
+function currentMarket(){
+  const ev=currentEvent();
+  return ev ? ev.markets.find(m=>m.id===S.currentMarketId)||null : null;
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────
+function renderNav(filter=''){
+  const groups = {};
+  S.events.forEach(ev=>{
+    if(filter && !ev.desc.toLowerCase().includes(filter.toLowerCase())) return;
+    const key = (ev.sport||'Other')+'||'+(ev.league||'General');
+    if(!groups[key]) groups[key]=[];
+    groups[key].push(ev);
+  });
+
+  let html='';
+  for(const key in groups){
+    const [sport, league] = key.split('||');
+    const groupId = 'g_'+key.replace(/[^a-z0-9]/gi,'_');
+    html += `<div class="nav-section-label">${sport}</div>`;
+    html += `<div class="nav-item nav-l1" onclick="toggleTree('${groupId}')">
+      <span>${sportIcon(sport)}</span> ${league}
+      <span class="nav-arrow open" id="arrow-${groupId}">▶</span>
+    </div>`;
+    html += `<div id="tree-${groupId}">`;
+    groups[key].forEach(ev=>{
+      const sel = ev.id===S.currentEventId ? 'selected':'';
+      const dotCls = statusDotCls(ev.status);
+      const sCls = statusNavCls(ev.status);
+      html += `<div class="nav-item nav-l2 ${sel}" onclick="openEvent(${ev.id})">
+        <span class="nav-dot ${dotCls}"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.desc}</span>
+        <span class="nav-s ${sCls}">${ev.status.substring(0,4)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  document.getElementById('nav-tree').innerHTML = html || '<div style="padding:20px;text-align:center;color:#4a6082;font-size:12px">No events found</div>';
+}
+
+function sportIcon(s){
+  return {Football:'⚽',Tennis:'🎾',Basketball:'🏀',Rugby:'🏉'}[s]||'🏆';
+}
+function statusDotCls(s){
+  return {OPEN:'nd-open',SUSPENDED:'nd-susp',SETTLED:'nd-settled',DRAFT:'nd-draft'}[s]||'nd-settled';
+}
+function statusNavCls(s){
+  return {OPEN:'ns-open',SUSPENDED:'ns-susp',SETTLED:'ns-settled',DRAFT:'ns-draft'}[s]||'ns-settled';
+}
+
+function toggleTree(id){
+  const tree=document.getElementById('tree-'+id);
+  const arrow=document.getElementById('arrow-'+id);
+  if(!tree)return;
+  const hidden=tree.style.display==='none';
+  tree.style.display=hidden?'block':'none';
+  arrow.classList.toggle('open',hidden);
+}
+
+function navSearch(q){ renderNav(q); }
+
+// ─── OPEN EVENT ───────────────────────────────────────────────────────
+function openEvent(idOrObj){
+  const ev = typeof idOrObj==='number' ? S.events.find(e=>e.id===idOrObj) : S.events.find(e=>e.id===idOrObj.id);
+  if(!ev) return;
+  S.currentEventId = ev.id;
+  S.currentMarketId = null;
+  saveState();
+  renderNav();
+  renderEventHeader(ev);
+  renderMkts(ev.markets);
+  showView('edit');
+}
+
+function renderEventHeader(ev){
+  document.getElementById('hdr-title').textContent = ev.desc;
+  const badgeCls = {OPEN:'badge-open',SUSPENDED:'badge-susp',SETTLED:'badge-settled',DRAFT:'badge-draft'}[ev.status]||'badge-draft';
+  document.getElementById('hdr-meta').innerHTML =
+    `${ev.league||''} &nbsp;·&nbsp; ${ev.date||''} ${ev.time||''} <span class="badge ${badgeCls}">${ev.status}</span>`;
+}
+
+// ─── VIEWS ────────────────────────────────────────────────────────────
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  closeDrawer();
+}
+
+// ─── CREATE EVENT ─────────────────────────────────────────────────────
+function saveNewEvent(){
+  const desc = document.getElementById('new-desc').value.trim();
+  const path = document.getElementById('new-path').value.trim();
+  const type = document.getElementById('new-type').value;
+  const date = document.getElementById('new-date').value;
+  const time = document.getElementById('new-time').value;
+  const oppA = document.getElementById('new-oppa').value.trim();
+  const oppB = document.getElementById('new-oppb').value.trim();
+
+  if(!desc||!path||!type||!date||!time){showToast('Fill required fields');return;}
+
+  const ev = {
+    id: nextId(), path, desc, date, time, type,
+    oppA, oppB, status:'DRAFT',
+    sport:'Football', league:'New Events',
+    markets:[]
+  };
+  S.events.push(ev);
+  S.currentEventId = ev.id;
+  S.currentMarketId = null;
+  saveState();
+
+  // clear form
+  ['new-desc','new-path','new-oppa','new-oppb'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('new-type').value='';
+  document.getElementById('new-date').value='';
+  document.getElementById('new-time').value='';
+
+  renderNav();
+  renderEventHeader(ev);
+  renderMkts([]);
+  showView('edit');
+  showToast('Event created — add Markets now');
+}
+
+// ─── MARKETS ──────────────────────────────────────────────────────────
+function renderMkts(markets, filter=''){
+  const wrap = document.getElementById('mkts-wrap');
+  const data = filter ? markets.filter(m=>m.desc.toLowerCase().includes(filter.toLowerCase())) : markets;
+  document.getElementById('mkt-cnt').textContent = markets.length;
+
+  if(!data.length){
+    wrap.innerHTML=`<div class="tbl-empty"><div class="tbl-empty-icon">📋</div><div class="tbl-empty-title">${filter?'No results':'No markets yet'}</div><div class="sm muted">${filter?'Try a different search':'Add the first market to get started'}</div></div>`;
+    return;
+  }
+
+  wrap.innerHTML=`<table>
+    <thead><tr><th>Market Description</th><th>Market Type</th><th>Period</th><th>Status</th><th>Outcomes</th></tr></thead>
+    <tbody>${data.map(m=>`
+    <tr class="row" onclick="openMarket(${m.id})">
+      <td style="font-weight:500">${m.desc}</td>
+      <td class="muted">${m.type}</td>
+      <td class="muted">${m.period}</td>
+      <td><span class="dot dot-${m.status.toLowerCase()}">${m.status}</span></td>
+      <td class="muted">${m.outcomes.length}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function filterMkts(q){
+  const ev=currentEvent();
+  if(ev) renderMkts(ev.markets, q);
+}
+
+function saveNewMarket(){
+  const desc = document.getElementById('nm-desc').value.trim();
+  const period = document.getElementById('nm-period').value;
+  const type = document.getElementById('nm-type').value;
+  const status = document.getElementById('nm-status').value;
+  if(!desc||!period||!type){showToast('Fill required fields');return;}
+
+  const ev = currentEvent();
+  if(!ev) return;
+  const mkt = {id:nextId(), desc, period, type, status, cash:document.getElementById('nm-cash').checked, outcomes:[]};
+  ev.markets.push(mkt);
+  saveState();
+  renderMkts(ev.markets);
+  closeDrawer();
+  showToast('Market added');
+  // clear
+  ['nm-desc','nm-opp','nm-tmpl'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nm-period').value='';
+  document.getElementById('nm-type').value='';
+}
+
+function saveBatchMarkets(){
+  const ev=currentEvent();
+  if(!ev) return;
+  const checked=[...document.querySelectorAll('#types-list input:checked')];
+  if(!checked.length){showToast('Select at least one type');return;}
+  const period=document.querySelector('#m-batch-mkt .ds').value;
+  checked.forEach(cb=>{
+    const desc=cb.parentElement.textContent.trim();
+    ev.markets.push({id:nextId(),desc,period,type:desc,status:'OPEN',cash:true,outcomes:[]});
+  });
+  saveState();
+  renderMkts(ev.markets);
+  closeModal('batch-mkt');
+  showToast(`${checked.length} markets created`);
+}
+
+// ─── MARKET DETAIL ────────────────────────────────────────────────────
+function openMarket(id){
+  const ev=currentEvent();
+  if(!ev) return;
+  const mkt=ev.markets.find(m=>m.id===id);
+  if(!mkt) return;
+  S.currentMarketId=id;
+  saveState();
+
+  document.getElementById('mkt-bc-name').textContent=mkt.desc;
+  document.getElementById('mf-id').textContent=mkt.id;
+  document.getElementById('mf-feed').textContent='RP-'+mkt.id;
+  document.getElementById('mf-desc').value=mkt.desc;
+  document.getElementById('mf-period').value=mkt.period;
+  document.getElementById('mf-type').value=mkt.type;
+  document.getElementById('mf-status').value=mkt.status;
+  document.getElementById('mf-cash').checked=mkt.cash;
+  updateMktBadge(mkt.status);
+  renderOutcomes(mkt.outcomes);
+
+  // reset to outcomes tab
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-out-btn').classList.add('active');
+  document.getElementById('pane-out').classList.add('active');
+
+  showView('mkt');
+}
+
+function saveMktEdits(){
+  const ev=currentEvent(); const mkt=currentMarket();
+  if(!mkt) return;
+  mkt.desc=document.getElementById('mf-desc').value;
+  mkt.period=document.getElementById('mf-period').value;
+  mkt.type=document.getElementById('mf-type').value;
+  mkt.status=document.getElementById('mf-status').value;
+  mkt.cash=document.getElementById('mf-cash').checked;
+  saveState();
+  renderMkts(ev.markets);
+  showToast('Market saved');
+}
+
+function toggleMktStatus(){
+  const mkt=currentMarket();
+  if(!mkt) return;
+  mkt.status = mkt.status==='SUSPENDED'?'OPEN':'SUSPENDED';
+  document.getElementById('mf-status').value=mkt.status;
+  updateMktBadge(mkt.status);
+  saveState();
+  showToast(mkt.status==='SUSPENDED'?'Market suspended':'Market reopened');
+}
+
+function syncMktStatus(){
+  const val=document.getElementById('mf-status').value;
+  updateMktBadge(val);
+}
+
+function updateMktBadge(status){
+  const b=document.getElementById('mkt-badge');
+  const btn=document.getElementById('mkt-susp-btn');
+  b.className='badge '+(status==='OPEN'?'badge-open':status==='SUSPENDED'?'badge-susp':'badge-settled');
+  b.textContent=status;
+  btn.textContent=status==='SUSPENDED'?'Reopen':'Suspend';
+}
+
+// ─── OUTCOMES ─────────────────────────────────────────────────────────
+function renderOutcomes(outcomes){
+  const wrap=document.getElementById('outcomes-wrap');
+  document.getElementById('out-cnt').textContent=outcomes.length;
+  if(!outcomes.length){
+    wrap.innerHTML=`<div class="tbl-empty"><div class="tbl-empty-icon">📊</div><div class="tbl-empty-title">No outcomes yet</div><div class="sm muted">Add the first outcome for this market</div></div>`;
+    return;
+  }
+  wrap.innerHTML=`<table>
+    <thead><tr>
+      <th style="width:28px"><input type="checkbox"></th>
+      <th>ID</th><th style="width:80px">Singles Only</th>
+      <th>Description</th><th style="width:70px">Price</th>
+      <th style="width:80px">Max Stake</th><th>Keywords</th>
+      <th style="width:80px">Status</th><th style="width:80px">Result</th>
+    </tr></thead>
+    <tbody>${outcomes.map(o=>`
+    <tr class="row" onclick="editOutcome(${o.id})">
+      <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+      <td class="muted">${o.id}</td>
+      <td><input type="checkbox" ${o.singles?'checked':''} onclick="event.stopPropagation();toggleSingles(${o.id},this)"></td>
+      <td><input class="ii" value="${esc(o.desc)}" onclick="event.stopPropagation()" onchange="updateOutcomeField(${o.id},'desc',this.value)"></td>
+      <td><input class="ii" value="${esc(o.price)}" style="width:60px" onclick="event.stopPropagation()" onchange="updateOutcomeField(${o.id},'price',this.value)"></td>
+      <td><input class="ii" value="${esc(o.maxStake)}" style="width:70px" onclick="event.stopPropagation()" onchange="updateOutcomeField(${o.id},'maxStake',this.value)"></td>
+      <td><input class="ii" value="${esc(o.keywords)}" onclick="event.stopPropagation()" onchange="updateOutcomeField(${o.id},'keywords',this.value)"></td>
+      <td><span class="dot dot-${o.status.toLowerCase()}">${o.status}</span></td>
+      <td class="muted">—</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function toggleSingles(id,cb){
+  const mkt=currentMarket(); if(!mkt) return;
+  const o=mkt.outcomes.find(o=>o.id===id); if(!o) return;
+  o.singles=cb.checked; saveState();
+}
+
+function updateOutcomeField(id,field,val){
+  const mkt=currentMarket(); if(!mkt) return;
+  const o=mkt.outcomes.find(o=>o.id===id); if(!o) return;
+  o[field]=val; saveState();
+}
+
+let editingOutcomeId=null;
+
+function editOutcome(id){
+  const mkt=currentMarket(); if(!mkt) return;
+  const o=mkt.outcomes.find(o=>o.id===id); if(!o) return;
+  editingOutcomeId=id;
+  buildOutDrawer(o, false);
+  openDrawer('edit-out');
+}
+
+function buildOutDrawer(o, isNew){
+  document.getElementById('out-title').textContent=isNew?'Add Outcome':'Edit Outcome';
+  document.getElementById('audit-btn').style.display=isNew?'none':'inline-flex';
+  document.getElementById('out-body').innerHTML=`
+    <div class="dr">
+      <div class="df"><label class="dl">ID</label><input class="di" value="${isNew?'':o.id}" ${isNew?'placeholder="auto-generated"':'readonly'}></div>
+      <div class="df"><label class="dl">FeedCode</label><input class="di" value="${isNew?'':'RP-'+o.id}" ${isNew?'placeholder="auto-generated"':'readonly'}></div>
+    </div>
+    <div class="df"><label class="dl">Description <span class="req">*</span></label>
+      <input class="di" id="of-desc" value="${isNew?'':esc(o.desc)}" placeholder="e.g. Home Win"></div>
+    <div class="df"><label class="dl">Description Template</label>
+      <input class="di" id="of-tmpl" value="${isNew?'':esc(o.desc)+' template'}"></div>
+    <div class="df"><label class="dl">Keywords</label>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${!isNew&&o.keywords?`<div style="display:flex;gap:6px;align-items:center"><input class="di" id="of-kw" value="${esc(o.keywords)}"><button class="btn btn-secondary btn-sm">🗑</button></div>`:`<input class="di" id="of-kw" value="" placeholder="Add keyword...">`}
+      </div></div>
+    <div class="dsec">Prices</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">
+      <table class="ptbl" style="flex:1"><thead><tr><th>Line ID</th><th>Price</th></tr></thead>
+        <tbody><tr><td><input class="ii" id="of-lineid" value="${isNew?'1':'2'}" style="width:55px"></td>
+        <td><input class="ii" id="of-price" value="${isNew?'':esc(o.price)}" style="width:75px"></td></tr></tbody></table>
+      <button class="btn btn-secondary btn-sm" style="margin-top:28px;white-space:nowrap">+ Add price line</button>
+    </div>
+    <div class="dr">
+      <div class="df"><label class="dl">Ordinal Position</label><input class="di" id="of-ord" type="number" value="${isNew?'':''}"></div>
+      <div class="df"><label class="dl">Max Stake</label><input class="di" id="of-stake" type="number" value="${isNew?'':esc(o.maxStake)}"></div>
+    </div>
+    <div class="df"><label class="dl">Status <span class="req">*</span></label>
+      <select class="ds" id="of-status">
+        <option ${(!isNew&&o.status==='OPEN')?'selected':''}>OPEN</option>
+        <option ${(!isNew&&o.status==='SUSPENDED')?'selected':''}>SUSPENDED</option>
+        <option ${(!isNew&&o.status==='RESULTED')?'selected':''}>RESULTED</option>
+        <option ${(!isNew&&o.status==='SETTLED')?'selected':''}>SETTLED</option>
+      </select></div>
+    <div class="df"><label class="dl">Outcome Key</label>
+      <select class="ds" id="of-key"><option>FIXED_TOTAL_OVER</option><option>HOME</option><option>DRAW</option><option>AWAY</option></select></div>
+    <div class="df"><label class="dl">Linked Event IDs</label><input class="di" id="of-linked"></div>
+    <div class="dsec">Options</div>
+    <div class="cbgrid">
+      <label class="cbrow"><input type="checkbox" id="of-hidden" ${!isNew&&o.hidden?'checked':''}> Hidden</label>
+      <label class="cbrow"><input type="checkbox" id="of-singles" ${!isNew&&o.singles?'checked':''}> Singles Only</label>
+    </div>`;
+}
+
+function saveOutcome(){
+  const mkt=currentMarket(); if(!mkt) return;
+  const desc=document.getElementById('of-desc').value.trim();
+  const price=document.getElementById('of-price').value.trim();
+  const status=document.getElementById('of-status').value;
+  const keywords=document.getElementById('of-kw').value.trim();
+  const maxStake=document.getElementById('of-stake').value.trim();
+  const singles=document.getElementById('of-singles').checked;
+  if(!desc){showToast('Description required');return;}
+
+  if(editingOutcomeId){
+    const o=mkt.outcomes.find(o=>o.id===editingOutcomeId);
+    if(o){o.desc=desc;o.price=price;o.status=status;o.keywords=keywords;o.maxStake=maxStake;o.singles=singles;}
+  } else {
+    mkt.outcomes.push({id:nextId(),desc,price,status,keywords,maxStake,singles,hidden:false});
+  }
+  saveState();
+  renderOutcomes(mkt.outcomes);
+  closeDrawer();
+  showToast(editingOutcomeId?'Outcome saved':'Outcome added');
+  editingOutcomeId=null;
+}
+
+function saveBatchOutcomes(){
+  const mkt=currentMarket(); if(!mkt) return;
+  const rows=[...document.querySelectorAll('#batch-out-rows input')];
+  const added=rows.filter(r=>r.value.trim()).map(r=>({
+    id:nextId(),desc:r.value.trim(),price:'',status:'OPEN',keywords:'',maxStake:'',singles:false,hidden:false
+  }));
+  if(!added.length){showToast('Enter at least one outcome');return;}
+  mkt.outcomes.push(...added);
+  saveState();
+  renderOutcomes(mkt.outcomes);
+  closeModal('batch-out');
+  showToast(`${added.length} outcomes created`);
+}
+
+function showAudit(){
+  document.getElementById('out-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <button class="btn btn-ghost btn-sm" onclick="editOutcome(${editingOutcomeId})">← Back to Outcome</button>
+      <span style="font-size:13px;font-weight:600;color:#374151">Audit Log</span>
+    </div>
+    <div class="alog"><div class="atime">Today, 14:32</div><div><span class="auser">trader.james</span> changed <span class="afield">Price</span></div><div class="achange">2.00 → 2.10</div></div>
+    <div class="alog"><div class="atime">Today, 11:15</div><div><span class="auser">trader.james</span> changed <span class="afield">Status</span></div><div class="achange">SUSPENDED → OPEN</div></div>
+    <div class="alog"><div class="atime">Today, 09:00</div><div><span class="auser">operator.anna</span> changed <span class="afield">Status</span></div><div class="achange">OPEN → SUSPENDED</div></div>
+    <div class="alog"><div class="atime">Yesterday, 18:42</div><div><span class="auser">trader.james</span> created outcome</div></div>`;
+}
+
+// ─── EVENT DETAILS DRAWER ─────────────────────────────────────────────
+function buildEvDetailsDrawer(ev){
+  document.getElementById('ev-details-body').innerHTML=`
+    <div class="dr">
+      <div class="df"><label class="dl">ID</label><input class="di" value="${ev.id}" readonly></div>
+      <div class="df"><label class="dl">FeedCode</label><input class="di" value="RP-EVT-${ev.id}" readonly></div>
+    </div>
+    <div class="df"><label class="dl">Event Path ID <span class="req">*</span></label><input class="di" id="ef-path" value="${esc(ev.path)}"></div>
+    <div class="df"><label class="dl">Description <span class="req">*</span></label><input class="di" id="ef-desc" value="${esc(ev.desc)}"></div>
+    <div class="dr">
+      <div class="df"><label class="dl">Start Date <span class="req">*</span></label><input class="di" type="date" id="ef-date" value="${ev.date}"></div>
+      <div class="df"><label class="dl">Start Time <span class="req">*</span></label><input class="di" type="time" id="ef-time" value="${ev.time}"></div>
+    </div>
+    <div class="dr">
+      <div class="df"><label class="dl">Opponent A</label><input class="di" id="ef-oppa" value="${esc(ev.oppA||'')}"></div>
+      <div class="df"><label class="dl">Opponent B</label><input class="di" id="ef-oppb" value="${esc(ev.oppB||'')}"></div>
+    </div>
+    <div class="df"><label class="dl">Type <span class="req">*</span></label>
+      <select class="ds" id="ef-type"><option ${ev.type==='Match'?'selected':''}>Match</option><option ${ev.type==='Outright'?'selected':''}>Outright</option></select></div>
+    <div class="df"><label class="dl">Status</label>
+      <select class="ds" id="ef-status">
+        <option ${ev.status==='DRAFT'?'selected':''}>DRAFT</option>
+        <option ${ev.status==='OPEN'?'selected':''}>OPEN</option>
+        <option ${ev.status==='SUSPENDED'?'selected':''}>SUSPENDED</option>
+        <option ${ev.status==='SETTLED'?'selected':''}>SETTLED</option>
+      </select></div>
+    <div class="dsec">Options</div>
+    <div class="cbgrid">
+      <label class="cbrow"><input type="checkbox"> Hidden</label>
+      <label class="cbrow"><input type="checkbox" checked> Forecast</label>
+      <label class="cbrow"><input type="checkbox" checked> Calendar Event</label>
+      <label class="cbrow"><input type="checkbox"> Tricast</label>
+      <label class="cbrow"><input type="checkbox" checked> Cashoutable</label>
+      <label class="cbrow"><input type="checkbox" checked> Best Odds Guarantee</label>
+    </div>`;
+}
+
+function saveEvDetails(){
+  const ev=currentEvent(); if(!ev) return;
+  ev.path=document.getElementById('ef-path').value.trim()||ev.path;
+  ev.desc=document.getElementById('ef-desc').value.trim()||ev.desc;
+  ev.date=document.getElementById('ef-date').value;
+  ev.time=document.getElementById('ef-time').value;
+  ev.oppA=document.getElementById('ef-oppa').value.trim();
+  ev.oppB=document.getElementById('ef-oppb').value.trim();
+  ev.type=document.getElementById('ef-type').value;
+  ev.status=document.getElementById('ef-status').value;
+  saveState();
+  renderNav();
+  renderEventHeader(ev);
+  closeDrawer();
+  showToast('Event details saved');
+}
+
+// ─── DRAWERS ──────────────────────────────────────────────────────────
+function openDrawer(id){
+  closeDrawer();
+  editingOutcomeId=null;
+  if(id==='ev-details'){
+    const ev=currentEvent(); if(ev) buildEvDetailsDrawer(ev);
+    showEl('d-ev-details');
+  } else if(id==='add-mkt'){
+    showEl('d-add-mkt');
+  } else if(id==='add-out'){
+    buildOutDrawer({id:null,desc:'',price:'',status:'OPEN',keywords:'',maxStake:'',singles:false},true);
+    showEl('d-outcome');
+  } else if(id==='edit-out'){
+    showEl('d-outcome');
+  }
+  document.getElementById('overlay').classList.add('on');
+}
+
+function showEl(id){
+  document.getElementById(id).classList.add('open');
+}
+
+function closeDrawer(){
+  document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'));
+  document.getElementById('overlay').classList.remove('on');
+}
+
+function closeAll(){ closeDrawer(); }
+
+// ─── MODALS ───────────────────────────────────────────────────────────
+function openModal(id){
+  if(id==='batch-out'){
+    document.getElementById('batch-out-rows').innerHTML=Array.from({length:8},(_,i)=>
+      `<div class="brow"><div class="bnum">${i+1}</div><input placeholder="Outcome description..."></div>`).join('');
+  }
+  document.getElementById('m-'+id).classList.add('on');
+}
+function closeModal(id){ document.getElementById('m-'+id).classList.remove('on'); }
+
+// ─── TYPES LIST ───────────────────────────────────────────────────────
+function renderTypes(list){
+  document.getElementById('types-list').innerHTML=list.map(t=>
+    `<label style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:12px">
+      <input type="checkbox" onchange="updateTypesCnt()"> ${t}
+    </label>`).join('');
+}
+function filterTypes(q){ renderTypes(MARKET_TYPES.filter(t=>t.toLowerCase().includes(q.toLowerCase()))); }
+function updateTypesCnt(){
+  const n=document.querySelectorAll('#types-list input:checked').length;
+  document.getElementById('types-cnt').textContent=`${n} type${n!==1?'s':''} selected`;
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+// ─── BOOK DETAILS ─────────────────────────────────────────────────────
+function addBookRow(){
+  const tb=document.getElementById('book-body');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="checkbox"></td><td><input class="ii" placeholder="EP/SP"></td><td><input class="ii" value="1" style="width:50px"></td><td class="muted">Win Only</td><td><select class="fs" style="font-size:11px;padding:3px 6px"><option>Win Only</option><option>EW 1/3 1,2,3,4</option></select></td><td><input type="checkbox"></td>`;
+  tb.appendChild(tr);
+  tr.querySelector('.ii').focus();
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+let tTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(tTimer);tTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+renderNav();
+renderTypes(MARKET_TYPES);
+const initEv = currentEvent() || S.events[0];
+if(initEv){ openEvent(initEv); }
+</script>
+</body>
+</html>

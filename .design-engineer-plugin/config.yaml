@@ -1,0 +1,11 @@
+project_type: new_product
+mode: guided
+goal: new_product
+environment:
+  git: true
+  source_code: false
+  tech_stack: none
+  plugins:
+    found: [figma, playwright]
+    missing: [context7, figma-console]
+created_at: 2026-06-05
